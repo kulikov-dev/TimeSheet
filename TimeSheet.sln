@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeSheetNet", "TimeSheetNet\TimeSheetNet.csproj", "{7FBDDC75-06F0-41EC-988D-D29D3FC4E173}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSheet", "TimeSheet\TimeSheet.csproj", "{7FBDDC75-06F0-41EC-988D-D29D3FC4E173}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeSheet.Tests", "TimeSheet.Tests\TimeSheet.Tests.csproj", "{CF084C22-6931-4E4D-AB1B-01B06E7A499D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{7FBDDC75-06F0-41EC-988D-D29D3FC4E173}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FBDDC75-06F0-41EC-988D-D29D3FC4E173}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FBDDC75-06F0-41EC-988D-D29D3FC4E173}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF084C22-6931-4E4D-AB1B-01B06E7A499D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF084C22-6931-4E4D-AB1B-01B06E7A499D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF084C22-6931-4E4D-AB1B-01B06E7A499D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF084C22-6931-4E4D-AB1B-01B06E7A499D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

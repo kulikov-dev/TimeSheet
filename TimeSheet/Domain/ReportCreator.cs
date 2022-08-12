@@ -1,37 +1,33 @@
-﻿using AngleSharp.Html.Parser;
-using OfficeOpenXml;
+﻿using OfficeOpenXml;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
+using TimeSheet.Application;
+using TimeSheet.Application.Data;
+using TimeSheet.Application.Logger;
+using TimeSheet.Application.Providers;
 
-namespace TimeSheetNet.Application
+namespace TimeSheet.Domain
 {
     internal static class ReportCreator
     {
         public static async Task Create(DateTime date)
         {
-            var weekends = await GetOfficialWeekends(date.Year);
-            var currentMonthWeekends = weekends[date.Month - 1];
-
+            var dataStorage = new WeekendsStorage(new ConsultantWeekendsProvider());
+            var currentMonthWeekends = await dataStorage.GetMonthWeekends(date);
 
             using var fileStream = new FileStream(Settings.WorkersPath, FileMode.Open, FileAccess.Read);
 
-            //async version
-            var data = await JsonSerializer.DeserializeAsync<Data>(fileStream);
-
+            var data = await JsonSerializer.DeserializeAsync<DepartmentInfo>(fileStream);
             if (data == null)
             {
-                Console.WriteLine("долбоеб");
+                Log.Error("Не удалось загрузить данные по сотрудникам. Проверьте корректность файла данных");
                 return;
             }
 
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{date.ToShortDateString()}.xls");
-            var indexer = 1;
-            while (File.Exists(path))
-            {
-                path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{date.ToShortDateString()}({indexer}).xls");
-                indexer++;
-            }
+            var path = GetUniquePath(date);
+            var cell = default(ExcelRange);
+            var range = default(ExcelRange);
 
             using (var excel = new ExcelPackage(new FileInfo(path)))
             {
@@ -43,8 +39,7 @@ namespace TimeSheetNet.Application
                 const int startDataRow = 6;
                 var rowsCount = data.Employers.Count + 3;
 
-
-                ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add("Табель учета");
+                var worksheet = excel.Workbook.Worksheets.Add("Табель учета");
                 worksheet.Cells[3, 1].Value = data.Department;
                 worksheet.Cells[3, 1].Style.Font.Size = 12;
                 worksheet.Cells[3, 1, 3, columnsCount].Merge = true;
@@ -57,10 +52,11 @@ namespace TimeSheetNet.Application
                 worksheet.Cells[startDataRow, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                 worksheet.Cells[startDataRow, 2].Value = "Числа месяца";
                 worksheet.Cells[startDataRow, 2].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                worksheet.Cells[startDataRow, columnsCount].Value = "Кол-во рабочих дней";
-                worksheet.Cells[startDataRow, columnsCount].Style.WrapText = true;
-                worksheet.Cells[startDataRow, columnsCount].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                worksheet.Cells[startDataRow, columnsCount].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                range = worksheet.Cells[startDataRow, columnsCount];
+                range.Value = "Кол-во рабочих дней";
+                range.Style.WrapText = true;
+                range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
 
                 var names = cultureInfo.DateTimeFormat.AbbreviatedDayNames.Select(x => x.ToLower()).ToList();
                 for (var i = 0; i < data.Employers.Count; ++i)
@@ -82,15 +78,19 @@ namespace TimeSheetNet.Application
                         }
 
                         if (currentMonthWeekends.Contains(j) || dayName == "сб" || dayName == "вс")
+                        {
                             continue;
+                        }
 
-                        worksheet.Cells[iPos, j + 1].Value = emp.Hours;
-                        worksheet.Cells[iPos, j + 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                        cell = worksheet.Cells[iPos, j + 1];
+                        cell.Value = emp.Hours;
+                        cell.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                         ++workDays;
                     }
 
-                    worksheet.Cells[iPos, columnsCount].Value = workDays;
-                    worksheet.Cells[iPos, columnsCount].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    cell = worksheet.Cells[iPos, columnsCount];
+                    cell.Value = workDays;
+                    cell.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                 }
 
                 worksheet.Cells[startDataRow, columnsCount, startDataRow + data.Employers.Count, columnsCount].Style.Font.Size = 11;
@@ -112,7 +112,7 @@ namespace TimeSheetNet.Application
                 worksheet.Cells[startDataRow + rowsCount + 4, colPos].Value = data.Position;
                 worksheet.Cells[startDataRow + rowsCount + 4, colPos].Style.Font.Size = 11;
 
-                worksheet.Cells[startDataRow, 1, startDataRow+rowsCount-1, columnsCount].Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                worksheet.Cells[startDataRow, 1, startDataRow + rowsCount - 1, columnsCount].Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 worksheet.Cells[startDataRow, 1, startDataRow + rowsCount - 1, columnsCount].Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 worksheet.Cells[startDataRow, 1, startDataRow + rowsCount - 1, columnsCount].Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 worksheet.Cells[startDataRow, 1, startDataRow + rowsCount - 1, columnsCount].Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
@@ -130,7 +130,7 @@ namespace TimeSheetNet.Application
                 worksheet.Column(columnsCount).Width = 8.43;
                 for (var j = 1; j <= daysInMonth; j++)
                 {
-                    worksheet.Column(j+1).Width = 2.71;
+                    worksheet.Column(j + 1).Width = 2.71;
                 }
 
                 excel.Save();
@@ -142,32 +142,24 @@ namespace TimeSheetNet.Application
             }
             catch
             {
-                string argument = "/select, \"" + path + "\"";
-                System.Diagnostics.Process.Start("explorer.exe", argument);
+                var argument = "/select, \"" + path + "\"";
+                Process.Start("explorer.exe", argument);
             }
         }
 
-        private async static Task<Dictionary<int, List<int>>> GetOfficialWeekends(int year)
+        private static string GetUniquePath(DateTime date)
         {
-            var url = string.Format("http://www.consultant.ru/law/ref/calendar/proizvodstvennye/{0}/", year);
-            using (var webClient = new HttpClient())
+            var dateStr = date.ToShortDateString();
+
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{dateStr}.xls");
+            var indexer = 1;
+            while (File.Exists(path))
             {
-                var html = await webClient.GetStringAsync(url);
-
-
-                var weekends = new Dictionary<int, List<int>>();
-
-                var parser = new HtmlParser();
-                var document = await parser.ParseDocumentAsync(html);
-                var selector = document.QuerySelectorAll(".cal");
-                for (var i = 0; i < selector.Length; i++)
-                {
-                    var weekendSelector = selector[i].QuerySelectorAll(".holiday");
-                    weekends.Add(i, weekendSelector.Select(x => int.Parse(x.InnerHtml)).ToList());
-                }
-
-                return weekends;
+                path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{dateStr}({indexer}).xls");
+                indexer++;
             }
+
+            return path;
         }
     }
 }
