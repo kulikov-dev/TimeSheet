@@ -1,9 +1,9 @@
 ﻿using AngleSharp.Html.Parser;
-using TimeSheet.Application.Data;
 using TimeSheet.Application.Interfaces;
 using TimeSheet.Application.Logger;
+using TimeSheet.Data;
 
-namespace TimeSheet.Application.Providers
+namespace TimeSheet.Domain.Providers
 {
     internal class ConsultantWeekendsProvider : IWeekendsProvider
     {

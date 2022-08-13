@@ -20,7 +20,7 @@ namespace TimeSheet.Application.Logger
         /// <summary>
         /// Parameterless constructor
         /// </summary>
-        public NLogWrapper()
+        internal NLogWrapper()
         {
             LogFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
             var config = new LoggingConfiguration();
@@ -55,7 +55,7 @@ namespace TimeSheet.Application.Logger
         /// <summary>
         /// Path to a log folder
         /// </summary>
-        public string LogFolderPath { get; }
+        internal string LogFolderPath { get; }
 
         /// <summary>
         /// Echo information message

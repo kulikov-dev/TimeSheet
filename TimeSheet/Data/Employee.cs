@@ -1,8 +1,8 @@
-﻿namespace TimeSheet.Application.Data
+﻿namespace TimeSheet.Data
 {
-    public class Employee
+    internal class Employee
     {
-        public string FullName { get; set; }
-        public int Hours { get; set; }
+        internal string FullName { get; set; }
+        internal int Hours { get; set; }
     }
 }

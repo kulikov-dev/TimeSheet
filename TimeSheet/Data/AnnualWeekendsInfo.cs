@@ -1,16 +1,16 @@
-﻿namespace TimeSheet.Application.Data
+﻿namespace TimeSheet.Data
 {
     internal class AnnualWeekendsInfo
     {
         private Dictionary<int, List<int>> monthWeekends = new Dictionary<int, List<int>>();
-        public int Year;
+        internal int Year;
 
-        public AnnualWeekendsInfo(int year)
+        internal AnnualWeekendsInfo(int year)
         {
             Year = year;
         }
 
-        public List<int> GetMonthWeekends(DateTime date)
+        internal List<int> GetMonthWeekends(DateTime date)
         {
             if (monthWeekends.ContainsKey(date.Month))
             {
@@ -20,7 +20,7 @@
             return new List<int>();
         }
 
-        public void AddMonthWeekends(int month, List<int> weekends)
+        internal void AddMonthWeekends(int month, List<int> weekends)
         {
             if (!monthWeekends.ContainsKey(month))
             {
@@ -32,7 +32,7 @@
             }
         }
 
-        public void AddMonthWeekends(DateTime date, List<int> weekends)
+        internal void AddMonthWeekends(DateTime date, List<int> weekends)
         {
             AddMonthWeekends(date.Month, weekends);
         }

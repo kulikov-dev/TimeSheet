@@ -1,10 +1,10 @@
-﻿namespace TimeSheet.Application.Data
+﻿namespace TimeSheet.Data
 {
-    public class DepartmentInfo
+    internal class DepartmentInfo
     {
-        public string Department { get; set; }
-        public List<Employee> Employers { get; set; }
-        public string Leader { get; set; }
-        public string Position { get; set; }
+        internal string Department { get; set; }
+        internal List<Employee> Employers { get; set; }
+        internal string Leader { get; set; }
+        internal string Position { get; set; }
     }
 }

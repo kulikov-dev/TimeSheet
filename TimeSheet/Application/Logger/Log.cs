@@ -5,29 +5,29 @@ namespace TimeSheet.Application.Logger
     /// <summary>
     /// Logger
     /// </summary>
-    public static class Log
+    internal static class Log
     {
         /// <summary>
         /// List of wrappers for logging
         /// </summary>
-        private static List<ILogWrapper> logWrappers = new List<ILogWrapper>();
+        private static readonly List<ILogWrapper> LogWrappers = new();
 
         /// <summary>
         /// Attach a new wrapper
         /// </summary>
         /// <param name="logWrapper"> Wrapper </param>
-        public static void Attach(ILogWrapper logWrapper)
+        internal static void Attach(ILogWrapper logWrapper)
         {
-            logWrappers.Add(logWrapper);
+            LogWrappers.Add(logWrapper);
         }
 
         /// <summary>
         /// Echo information message
         /// </summary>
         /// <param name="message"> Message </param>
-        public static void Info(string message)
+        internal static void Info(string message)
         {
-            foreach (var logger in logWrappers)
+            foreach (var logger in LogWrappers)
             {
                 logger.Info(message);
             }
@@ -37,9 +37,9 @@ namespace TimeSheet.Application.Logger
         /// Echo warning message
         /// </summary>
         /// <param name="message"> Message </param>
-        public static void Warning(string message)
+        internal static void Warning(string message)
         {
-            foreach (var logger in logWrappers)
+            foreach (var logger in LogWrappers)
             {
                 logger.Warning(message);
             }
@@ -50,9 +50,9 @@ namespace TimeSheet.Application.Logger
         /// </summary>
         /// <param name="message"> Message </param>
         /// <param name="ex"> Exception </param>
-        public static void Error(string message, Exception? ex = null)
+        internal static void Error(string message, Exception? ex = null)
         {
-            foreach (var logger in logWrappers)
+            foreach (var logger in LogWrappers)
             {
                 logger.Error(message, ex);
             }
