@@ -18,7 +18,7 @@ namespace TimeSheet.Application.Logger
         private readonly NLog.Logger _logger;
 
         /// <summary>
-        /// Parameterless constructor
+        /// Parameter-less constructor
         /// </summary>
         internal NLogWrapper()
         {

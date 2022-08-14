@@ -7,45 +7,77 @@ namespace TimeSheet.Domain
     /// <summary>
     /// Storage of department info: workers, leader, etc
     /// </summary>
-    internal class DepartmentStorage : IEnumerable<Employee>
+    internal sealed class DepartmentStorage : IEnumerable<Employee>
     {
         /// <summary>
         /// Weekends provider
         /// </summary>
         private readonly IDepartmentProvider _provider;
 
-
-
+        /// <summary>
+        /// Department information
+        /// </summary>
         private DepartmentInfo? _departmentInfo;
 
+        /// <summary>
+        /// Constructor with parameters
+        /// </summary>
+        /// <param name="provider"> Data provider </param>
         internal DepartmentStorage(IDepartmentProvider provider)
         {
             _provider = provider;
         }
 
-        internal async Task Load()
-        {
-            _departmentInfo = await _provider.Load();
-        }
+        /// <summary>
+        /// Check if a department has employees
+        /// </summary>
+        internal bool HasEmployees => _departmentInfo?.Employees?.Count > 0;
 
-        internal bool HasWorkers => _departmentInfo != null && _departmentInfo.Employers.Count > 0;
+        /// <summary>
+        /// Employees count
+        /// </summary>
+        internal int EmployeesCount => _departmentInfo == null ? 0 : _departmentInfo.Employees.Count;
 
-        internal int WorkersCount => _departmentInfo == null ? 0 : _departmentInfo.Employers.Count;
+        /// <summary>
+        /// Department title
+        /// </summary>
+        internal string DepartmentTitle => _departmentInfo?.DepartmentTitle ?? string.Empty;
 
-        internal string Department => _departmentInfo?.Department ?? string.Empty;
+        /// <summary>
+        /// Department leader position
+        /// </summary>
+        internal string LeaderPosition => _departmentInfo?.LeaderPosition ?? string.Empty;
 
-        internal string Position => _departmentInfo?.Position ?? string.Empty;
+        /// <summary>
+        /// Department leader name
+        /// </summary>
+        internal string LeaderName => _departmentInfo?.LeaderName ?? string.Empty;
 
-        internal string Leader => _departmentInfo?.Leader ?? string.Empty;
-
+        /// <summary>
+        /// Enumerator
+        /// </summary>
+        /// <returns> List of employees </returns>
         public IEnumerator<Employee> GetEnumerator()
         {
-            return _departmentInfo != null ? _departmentInfo.Employers.GetEnumerator() : Enumerable.Empty<Employee>().GetEnumerator();
+            return _departmentInfo != null ? _departmentInfo.Employees.GetEnumerator() : Enumerable.Empty<Employee>().GetEnumerator();
         }
 
+        /// <summary>
+        /// Get enumerator
+        /// </summary>
+        /// <returns> Enumerator </returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        /// <summary>
+        /// Load department info from a provider
+        /// </summary>
+        /// <returns> Task </returns>
+        internal async Task Load()
+        {
+            _departmentInfo = await _provider.Load();
         }
     }
 }

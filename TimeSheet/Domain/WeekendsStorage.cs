@@ -6,7 +6,7 @@ namespace TimeSheet.Domain
     /// <summary>
     /// Storage of weekends
     /// </summary>
-    internal class WeekendsStorage
+    internal sealed class WeekendsStorage
     {
         /// <summary>
         /// Annual weekends information

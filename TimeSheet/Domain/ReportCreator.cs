@@ -1,17 +1,24 @@
 ﻿using OfficeOpenXml;
-using System.Diagnostics;
 using System.Globalization;
 using OfficeOpenXml.Style;
 using TimeSheet.Application.Interfaces;
 using TimeSheet.Application.Logger;
 using TimeSheet.Domain.Providers;
 using TimeSheet.Application.Structs;
+using TimeSheet.Application.Utils;
 
 namespace TimeSheet.Domain
 {
     internal static class ReportCreator
     {
-        internal static async Task Create(DateTime date, IDepartmentProvider? departmentProvider, IWeekendsProvider weekendsProvider)
+        /// <summary>
+        /// Create a time-sheet report
+        /// </summary>
+        /// <param name="date"> Date of report </param>
+        /// <param name="departmentProvider"> Department storage provider </param>
+        /// <param name="weekendsProvider"> Weekends provider </param>
+        /// <returns> Flag of success </returns>
+        internal static async Task<bool> Create(DateTime date, IDepartmentProvider departmentProvider, IWeekendsProvider weekendsProvider)
         {
             var dataStorage = new WeekendsStorage(weekendsProvider);
             var currentMonthWeekends = await dataStorage.GetMonthWeekends(date);
@@ -19,160 +26,157 @@ namespace TimeSheet.Domain
             var departmentStorage = new DepartmentStorage(departmentProvider);
             await departmentStorage.Load();
 
-            if (departmentStorage == null || !departmentStorage.HasWorkers)
+            if (!departmentStorage.HasEmployees)
             {
-                Log.Warning("Отсутствуют сотрудники для формирования табель учета рабочих дней.");
-                return;
+                Log.Warning("Отсутствуют сотрудники для формирования табеля учета рабочих дней.");
+                return false;
             }
 
-            var path = GetUniquePath(date);
-
+            var path = GetReportUniquePath(date);
             try
             {
-                using (var excel = new ExcelPackage(new FileInfo(path)))
+                using var excel = new ExcelPackage(new FileInfo(path));
+                var cultureInfo = CultureInfo.CreateSpecificCulture("ru");
+                var daysInMonth = DateTime.DaysInMonth(date.Year, date.Month);
+                var fullMonthName = date.ToString("MMMM", cultureInfo).ToLower();
+
+                const int startDataRow = 6;
+                const int serviceColumnsCount = 2;
+                const int serviceRowsCount = 3;
+                var columnsCount = daysInMonth + serviceColumnsCount;
+                var rowsCount = departmentStorage.EmployeesCount + serviceRowsCount;
+
+                var worksheet = excel.Workbook.Worksheets.Add("Табель учета");
+                worksheet.PrinterSettings.Orientation = eOrientation.Landscape;
+                var cell = worksheet.Cells[3, 1];
+                cell.Value = departmentStorage.DepartmentTitle;
+                cell.Style.Font.Size = 12;
+                worksheet.Cells[3, 1, 3, columnsCount].Merge = true;
+
+                cell = worksheet.Cells[4, 1];
+                cell.Value = $"Табель учета рабочего времени за {fullMonthName} {date.Year} года.";
+                cell.Style.Font.Size = 12;
+                worksheet.Cells[4, 1, 4, columnsCount].Merge = true;
+
+                cell = worksheet.Cells[startDataRow, 1];
+                cell.Value = "№ Ф.И.О.";
+                cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+                cell = worksheet.Cells[startDataRow, 2];
+                cell.Value = "Числа месяца";
+                cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+                cell = worksheet.Cells[startDataRow, columnsCount];
+                cell.Value = "Кол-во рабочих дней";
+                cell.Style.WrapText = true;
+                cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                cell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+
+                var dayNames = cultureInfo.DateTimeFormat.AbbreviatedDayNames.Select(dayName => dayName.ToLower()).ToList();
+                var employeeIndex = -1;
+                foreach (var worker in departmentStorage)
                 {
-                    var cultureInfo = CultureInfo.CreateSpecificCulture("ru");
-                    var daysInMonth = DateTime.DaysInMonth(date.Year, date.Month);
-                    var columnsCount = daysInMonth + 2;
-                    var fullMonthName = date.ToString("MMMM", cultureInfo).ToLower();
+                    ++employeeIndex;
+                    var currentRowPosition = startDataRow + employeeIndex + serviceRowsCount;
+                    worksheet.Cells[currentRowPosition, 1].Value = worker.FullName;
 
-                    const int startDataRow = 6;
-                    var rowsCount = departmentStorage.WorkersCount + 3;
-
-                    var worksheet = excel.Workbook.Worksheets.Add("Табель учета");
-                    var cell = worksheet.Cells[3, 1];
-                    cell.Value = departmentStorage.Department;
-                    cell.Style.Font.Size = 12;
-                    worksheet.Cells[3, 1, 3, columnsCount].Merge = true;
-
-                    cell = worksheet.Cells[4, 1];
-                    cell.Value = $"Табель учета рабочего времени за {fullMonthName} {date.Year} года.";
-                    cell.Style.Font.Size = 12;
-                    worksheet.Cells[4, 1, 4, columnsCount].Merge = true;
-
-                    cell = worksheet.Cells[startDataRow, 1];
-                    cell.Value = "№ Ф.И.О.";
-                    cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                    cell = worksheet.Cells[startDataRow, 2];
-                    cell.Value = "Числа месяца";
-                    cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                    var range = worksheet.Cells[startDataRow, columnsCount];
-                    range.Value = "Кол-во рабочих дней";
-                    range.Style.WrapText = true;
-                    range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                    range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-
-                    var names = cultureInfo.DateTimeFormat.AbbreviatedDayNames.Select(x => x.ToLower()).ToList();
-                    var i = -1;
-                    foreach (var worker in departmentStorage)
+                    for (var j = 1; j <= daysInMonth; j++)
                     {
-                        ++i;
-                        var iPos = startDataRow + i + 3;
-                        worksheet.Cells[iPos, 1].Value = worker.FullName;
-
-                        var workDays = 0;
-                        for (var j = 1; j <= daysInMonth; j++)
+                        var dayName = dayNames[(int)new DateTime(date.Year, date.Month, j).DayOfWeek];
+                        if (employeeIndex == 0)
                         {
-                            var dayName = names[(int)new DateTime(date.Year, date.Month, j).DayOfWeek];
-                            if (i == 0)
-                            {
-                                cell = worksheet.Cells[startDataRow + 1, j + 1];
-                                cell.Value = j.ToString();
-                                cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                                cell = worksheet.Cells[startDataRow + 2, j + 1];
-                                cell.Value = dayName;
-                                cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                            }
-
-                            if (currentMonthWeekends.Contains(j) || dayName == "сб" || dayName == "вс")
-                            {
-                                continue;
-                            }
-
-                            cell = worksheet.Cells[iPos, j + 1];
-                            cell.Value = worker.Hours;
+                            //// Day index
+                            cell = worksheet.Cells[startDataRow + 1, j + 1];
+                            cell.Value = j.ToString();
                             cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                            ++workDays;
+
+                            //// Day name
+                            cell = worksheet.Cells[startDataRow + 2, j + 1];
+                            cell.Value = dayName;
+                            cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                         }
 
-                        cell = worksheet.Cells[iPos, columnsCount];
-                        cell.Value = workDays;
+                        if (currentMonthWeekends.Contains(j))
+                        {
+                            continue;
+                        }
+
+                        cell = worksheet.Cells[currentRowPosition, j + 1];
+                        cell.Value = worker.WorkHours;
                         cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     }
 
-                    worksheet.Cells[startDataRow, columnsCount, startDataRow + departmentStorage.WorkersCount,
-                        columnsCount].Style.Font.Size = 11;
-                    range = worksheet.Cells[startDataRow + 1 + rowsCount, 1];
-                    range.Value =
-                        "к - командировка, б - больничный, о - отпуск, п - прогул, д - декрет, 8 - проработанное время, у - увольнения";
-                    range.Style.Font.Size = 10;
-                    range.Style.Font.Italic = true;
-
-                    worksheet.Cells[startDataRow + rowsCount + 1, 1].Style.Font.Italic = true;
-                    range = worksheet.Cells[startDataRow, 1, startDataRow + 2, 1];
-                    range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-                    range.Merge = true;
-
-                    range = worksheet.Cells[startDataRow, 2, startDataRow, columnsCount - 1];
-                    range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-                    range.Merge = true;
-
-                    range = worksheet.Cells[startDataRow, columnsCount, startDataRow + 2, columnsCount];
-                    range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-                    range.Merge = true;
-
-                    var colPos = columnsCount / 2;
-                    worksheet.Cells[startDataRow + rowsCount + 4, colPos].Value = departmentStorage.Position;
-                    worksheet.Cells[startDataRow + rowsCount + 4, colPos].Style.Font.Size = 11;
-
-                    range = worksheet.Cells[startDataRow, 1, startDataRow + rowsCount - 1, columnsCount];
-                    range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
-                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
-                    range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                    range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                    var pos = startDataRow + rowsCount + startDataRow;
-                    colPos = columnsCount / 2;
-
-                    cell = worksheet.Cells[pos, colPos];
-                    cell.Value = @"__________________________";
-                    cell.Style.Font.Size = 11;
-
-                    colPos = (int)(columnsCount * 0.8f);
-                    worksheet.Cells[pos, colPos].Value = departmentStorage.Leader;
-                    worksheet.Cells[pos, colPos].Style.Font.Size = 11;
-
-                    worksheet.Column(1).Width = 13.86;
-                    worksheet.Column(columnsCount).Width = 8.43;
-                    for (var j = 1; j <= daysInMonth; j++)
-                    {
-                        worksheet.Column(j + 1).Width = 2.71;
-                    }
-
-                    excel.Save();
+                    cell = worksheet.Cells[currentRowPosition, columnsCount];
+                    cell.Formula = $"SUM({worksheet.Cells[currentRowPosition, serviceColumnsCount, currentRowPosition, columnsCount - 1]})";
+                    cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                 }
+
+                worksheet.Cells[startDataRow, columnsCount, startDataRow + departmentStorage.EmployeesCount, columnsCount].Style.Font.Size = 11;
+                cell = worksheet.Cells[startDataRow + 1 + rowsCount, 1];
+                cell.Value = "к - командировка, б - больничный, о - отпуск, п - прогул, д - декрет, 8 - проработанное время, у - увольнения";
+                cell.Style.Font.Size = 10;
+                cell.Style.Font.Italic = true;
+
+                worksheet.Cells[startDataRow + rowsCount + 1, 1].Style.Font.Italic = true;
+
+                var range = worksheet.Cells[startDataRow, 1, startDataRow + 2, 1];
+                range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                range.Merge = true;
+
+                range = worksheet.Cells[startDataRow, 2, startDataRow, columnsCount - 1];
+                range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                range.Merge = true;
+
+                range = worksheet.Cells[startDataRow, columnsCount, startDataRow + 2, columnsCount];
+                range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                range.Merge = true;
+
+                var leaderColumnPosition = columnsCount / 2;
+                worksheet.Cells[startDataRow + rowsCount + 4, leaderColumnPosition].Value = departmentStorage.LeaderPosition;
+                worksheet.Cells[startDataRow + rowsCount + 4, leaderColumnPosition].Style.Font.Size = 11;
+
+                range = worksheet.Cells[startDataRow, 1, startDataRow + rowsCount - 1, columnsCount];
+                range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+
+                var signatureRowPosition = startDataRow + rowsCount + startDataRow;
+                cell = worksheet.Cells[signatureRowPosition, leaderColumnPosition];
+                cell.Value = @"__________________________";
+                cell.Style.Font.Size = 11;
+
+                var signatureColumnPosition = (int)(columnsCount * 0.8f);
+                worksheet.Cells[signatureRowPosition, signatureColumnPosition].Value = departmentStorage.LeaderName;
+                worksheet.Cells[signatureRowPosition, signatureColumnPosition].Style.Font.Size = 11;
+
+                worksheet.Column(1).Width = 13.86;
+                worksheet.Column(columnsCount).Width = 8.43;
+                for (var j = serviceColumnsCount; j <= serviceColumnsCount + daysInMonth - 1; j++)
+                {
+                    worksheet.Column(j).Width = 2.71;
+                }
+
+                excel.Save();
             }
             catch (Exception ex)
             {
-                Log.Error("При создании отчета произошла ошибка. Пожалуйста обратитесь к разработчикам.", ex);
-                return;
+                Log.Error("При создании отчета произошла ошибка. Пожалуйста, обратитесь к разработчикам.", ex);
+                return false;
             }
 
-            try
-            {
-                Process.Start(path);
-            }
-            catch
-            {
-                var argument = "/select, \"" + path + "\"";
-                Process.Start("explorer.exe", argument);
-            }
-
+            FileUtils.LaunchFile(path);
 
             Log.Info("Создание отчета успешно завершено.");
+            return true;
         }
 
-        private static string GetUniquePath(DateTime date)
+        /// <summary>
+        /// Get unique path for a created report
+        /// </summary>
+        /// <param name="date"> Report date </param>
+        /// <returns> Unique path </returns>
+        private static string GetReportUniquePath(DateTime date)
         {
             var dateStr = date.ToShortDateString();
 
@@ -188,7 +192,7 @@ namespace TimeSheet.Domain
         }
 
         /// <summary>
-        /// 
+        /// Class command handler
         /// </summary>
         /// <remarks> Used by reflection. Do not remove </remarks>
         internal sealed class ReportCreatorCommandHandler : ICommandsHandler
@@ -206,7 +210,8 @@ namespace TimeSheet.Domain
             {
                 return new List<ConsoleCommand>()
                 {
-                    new (Report, $" * {Report}: создать табель учета рабочего времени;", 1)
+                    new (Report, $" * {Report}: создать табель учета рабочего времени на текущую дату;", 1),
+                    new (Report, $" * {Report} ДАТА: создать табель учета рабочего времени на указанную дату;", 2),
                 };
             }
 
@@ -220,27 +225,29 @@ namespace TimeSheet.Domain
                 var commands = GetCommands();
                 foreach (var localCommand in commands)
                 {
-                    if (localCommand.Name.Equals(command, StringComparison.InvariantCultureIgnoreCase))
+                    if (!command.StartsWith(localCommand.Name, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        switch (localCommand.Name)
-                        {
-                            case Report:
-                                var subCommands = command.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                                var date = DateTime.Now;
-                                if (subCommands.Length == 2)
-                                {
-                                    if (!DateTime.TryParse(subCommands[1], out date))
-                                    {
-                                        date = DateTime.Now;
-                                    }
-                                }
-
-                                Console.WriteLine($"Пожалуйста подождите, идет подготовка отчета//");
-                                await ReportCreator.Create(date, new DepartmentFileProvider(), new ConsultantWeekendsProvider());
-                                break;
-                        }
-                        return true;
+                        continue;
                     }
+
+                    switch (localCommand.Name)
+                    {
+                        case Report:
+                            var subCommands = command.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            var date = DateTime.Now;
+                            if (subCommands.Length == 2)
+                            {
+                                if (!DateTime.TryParse(subCommands[1], out date))
+                                {
+                                    date = DateTime.Now;
+                                }
+                            }
+
+                            Console.WriteLine("Пожалуйста подождите, идет подготовка отчета...");
+                            await Create(date, new DepartmentFileProvider(), new ConsultantWeekendsProvider());
+                            break;
+                    }
+                    return true;
                 }
 
                 return false;

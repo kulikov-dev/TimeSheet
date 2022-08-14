@@ -35,7 +35,7 @@ namespace TimeSheet.Application
         }
 
         /// <summary>
-        /// Core console commands handler
+        /// Class command handler
         /// </summary>
         /// <remarks> Used by reflection. Do not remove </remarks>
         internal sealed class ApplicationCommandHandler : ICommandsHandler
@@ -58,8 +58,8 @@ namespace TimeSheet.Application
             {
                 return new List<ConsoleCommand>()
                 {
-                    new (Help, $" * {Help}: показать справку;", 5),
-                    new (Exit, $" * {Exit}: выйти из приложения;",6 )
+                    new (Help, $" * {Help}: показать справку;", 6),
+                    new (Exit, $" * {Exit}: выйти из приложения;",7)
                 };
             }
 

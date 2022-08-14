@@ -26,7 +26,7 @@ namespace TimeSheet {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        internal string DepartmentStorageSourcePath {
+        public string DepartmentStorageSourcePath {
             get {
                 return ((string)(this["DepartmentStorageSourcePath"]));
             }

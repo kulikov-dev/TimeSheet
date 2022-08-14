@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using TimeSheet.Application;
+﻿using TimeSheet.Application;
 using TimeSheet.Application.Logger;
 
 Log.Attach(new ConsoleWrapper());
@@ -8,7 +6,7 @@ Log.Attach(new NLogWrapper());
 
 ProgramCore.Init();
 
-Console.WriteLine($"Добро пожаловать в TimeSheet - программу для составления табеля учета рабочего времени. Введите '{ProgramCore.ApplicationCommandHandler.Help}' для справки.");
+Console.WriteLine($"Добро пожаловать в TimeSheet: программу для составления табелей учета рабочего времени. Введите '{ProgramCore.ApplicationCommandHandler.Help}' для справки.");
 while (true)
 {
     var command = Console.ReadLine()?.ToLower().Trim();
