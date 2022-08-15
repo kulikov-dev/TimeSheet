@@ -25,16 +25,14 @@ namespace TimeSheet.Domain.Providers
                 return null;
             }
 
-            await using (var fileStream = new FileStream(DepartmentFileProviderSettings.SourcePath, FileMode.Open, FileAccess.Read))
+            await using var fileStream = new FileStream(DepartmentFileProviderSettings.SourcePath, FileMode.Open, FileAccess.Read);
+            var result = await JsonSerializer.DeserializeAsync<DepartmentInfo>(fileStream);
+            if (result == null)
             {
-                var result = await JsonSerializer.DeserializeAsync<DepartmentInfo>(fileStream);
-                if (result == null)
-                {
-                    Log.Error(errorMessage);
-                }
-
-                return result;
+                Log.Error(errorMessage);
             }
+
+            return result;
         }
 
         /// <summary>

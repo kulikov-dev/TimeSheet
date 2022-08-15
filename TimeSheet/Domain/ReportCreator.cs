@@ -9,7 +9,7 @@ using TimeSheet.Application.Utils;
 
 namespace TimeSheet.Domain
 {
-    internal static class ReportCreator
+    public static class ReportCreator
     {
         /// <summary>
         /// Create a time-sheet report
@@ -18,7 +18,7 @@ namespace TimeSheet.Domain
         /// <param name="departmentProvider"> Department storage provider </param>
         /// <param name="weekendsProvider"> Weekends provider </param>
         /// <returns> Flag of success </returns>
-        internal static async Task<bool> Create(DateTime date, IDepartmentProvider departmentProvider, IWeekendsProvider weekendsProvider)
+        public static async Task<bool> Create(DateTime date, IDepartmentProvider departmentProvider, IWeekendsProvider weekendsProvider)
         {
             var dataStorage = new WeekendsStorage(weekendsProvider);
             var currentMonthWeekends = await dataStorage.GetMonthWeekends(date);

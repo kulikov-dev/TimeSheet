@@ -5,7 +5,7 @@ namespace TimeSheet.Application.Interfaces
     /// <summary>
     /// Interface for holidays/weekends provider
     /// </summary>
-    internal interface IWeekendsProvider
+    public interface IWeekendsProvider
     {
         /// <summary>
         /// Get annual weekends

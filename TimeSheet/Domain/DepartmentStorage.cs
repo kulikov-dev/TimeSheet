@@ -7,7 +7,7 @@ namespace TimeSheet.Domain
     /// <summary>
     /// Storage of department info: workers, leader, etc
     /// </summary>
-    internal sealed class DepartmentStorage : IEnumerable<Employee>
+    public sealed class DepartmentStorage : IEnumerable<Employee>
     {
         /// <summary>
         /// Weekends provider
@@ -23,7 +23,7 @@ namespace TimeSheet.Domain
         /// Constructor with parameters
         /// </summary>
         /// <param name="provider"> Data provider </param>
-        internal DepartmentStorage(IDepartmentProvider provider)
+        public DepartmentStorage(IDepartmentProvider provider)
         {
             _provider = provider;
         }

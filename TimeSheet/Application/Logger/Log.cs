@@ -5,7 +5,7 @@ namespace TimeSheet.Application.Logger
     /// <summary>
     /// Logger
     /// </summary>
-    internal static class Log
+    public static class Log
     {
         /// <summary>
         /// List of wrappers for logging
@@ -16,7 +16,7 @@ namespace TimeSheet.Application.Logger
         /// Attach a new wrapper
         /// </summary>
         /// <param name="logWrapper"> Wrapper </param>
-        internal static void Attach(ILogWrapper logWrapper)
+        public static void Attach(ILogWrapper logWrapper)
         {
             LogWrappers.Add(logWrapper);
         }
@@ -25,7 +25,7 @@ namespace TimeSheet.Application.Logger
         /// Echo information message
         /// </summary>
         /// <param name="message"> Message </param>
-        internal static void Info(string message)
+        public static void Info(string message)
         {
             foreach (var logger in LogWrappers)
             {
@@ -37,7 +37,7 @@ namespace TimeSheet.Application.Logger
         /// Echo warning message
         /// </summary>
         /// <param name="message"> Message </param>
-        internal static void Warning(string message)
+        public static void Warning(string message)
         {
             foreach (var logger in LogWrappers)
             {
@@ -50,7 +50,7 @@ namespace TimeSheet.Application.Logger
         /// </summary>
         /// <param name="message"> Message </param>
         /// <param name="ex"> Exception </param>
-        internal static void Error(string message, Exception? ex = null)
+        public static void Error(string message, Exception? ex = null)
         {
             foreach (var logger in LogWrappers)
             {

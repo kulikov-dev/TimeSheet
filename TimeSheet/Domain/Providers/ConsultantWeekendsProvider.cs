@@ -9,7 +9,7 @@ namespace TimeSheet.Domain.Providers
     /// <summary>
     /// Provider for taking weekends/holidays from the Consultant Plus source
     /// </summary>
-    internal class ConsultantWeekendsProvider : IWeekendsProvider
+    public sealed class ConsultantWeekendsProvider : IWeekendsProvider
     {
         /// <summary>
         /// Path to the source url
@@ -47,7 +47,7 @@ namespace TimeSheet.Domain.Providers
             catch (Exception ex)
             {
                 Log.Error("Не удалось получить данные по выходным дням с сервера Консультант Плюс.", ex);
-                return result;
+                return new AnnualWeekendsInfo(0);
             }
         }
     }

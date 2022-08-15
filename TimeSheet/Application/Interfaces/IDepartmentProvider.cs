@@ -5,7 +5,7 @@ namespace TimeSheet.Application.Interfaces
     /// <summary>
     /// Interface for department info data sources
     /// </summary>
-    internal interface IDepartmentProvider
+    public interface IDepartmentProvider
     {
         /// <summary>
         /// Load department information

@@ -3,7 +3,7 @@
     /// <summary>
     /// Interface for log wrappers
     /// </summary>
-    internal interface ILogWrapper
+    public interface ILogWrapper
     {
         /// <summary>
         /// Echo information message
