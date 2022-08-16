@@ -1,0 +1,15 @@
+{
+  "DepartmentTitle": "Отдел разработки ПО",
+  "LeaderName": "Иванов И.И.",
+  "LeaderPosition": "Начальник отдела",
+  "Employees": [
+    {
+		"FullName": "Петров П.П.",
+		"WorkHours": 8
+	},
+	 {
+		"FullName": "Васечкин В.В.",
+		"WorkHours": 6
+	}
+  ]
+}

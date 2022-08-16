@@ -17,8 +17,9 @@ namespace TimeSheet.Domain
         /// <param name="date"> Date of report </param>
         /// <param name="departmentProvider"> Department storage provider </param>
         /// <param name="weekendsProvider"> Weekends provider </param>
-        /// <returns> Flag of success </returns>
-        public static async Task<bool> Create(DateTime date, IDepartmentProvider departmentProvider, IWeekendsProvider weekendsProvider)
+        /// <param name="exportPath"> Output path </param>
+        /// <returns> Path to the report </returns>
+        public static async Task<string?> Create(DateTime date, IDepartmentProvider departmentProvider, IWeekendsProvider weekendsProvider, string? exportPath = null)
         {
             var dataStorage = new WeekendsStorage(weekendsProvider);
             var currentMonthWeekends = await dataStorage.GetMonthWeekends(date);
@@ -29,10 +30,22 @@ namespace TimeSheet.Domain
             if (!departmentStorage.HasEmployees)
             {
                 Log.Warning("Отсутствуют сотрудники для формирования табеля учета рабочих дней.");
-                return false;
+                return null;
             }
 
-            var path = GetReportUniquePath(date);
+            var path = exportPath;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = GetReportUniquePath(date);
+            }
+            else
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+
             try
             {
                 using var excel = new ExcelPackage(new FileInfo(path));
@@ -162,13 +175,11 @@ namespace TimeSheet.Domain
             catch (Exception ex)
             {
                 Log.Error("При создании отчета произошла ошибка. Пожалуйста, обратитесь к разработчикам.", ex);
-                return false;
+                return null;
             }
 
-            FileUtils.LaunchFile(path);
-
             Log.Info("Создание отчета успешно завершено.");
-            return true;
+            return path;
         }
 
         /// <summary>
@@ -180,11 +191,11 @@ namespace TimeSheet.Domain
         {
             var dateStr = date.ToShortDateString();
 
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{dateStr}.xls");
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{dateStr}.xlsx");
             var indexer = 1;
             while (File.Exists(path))
             {
-                path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{dateStr}({indexer}).xls");
+                path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"report_{dateStr}({indexer}).xlsx");
                 indexer++;
             }
 
@@ -244,7 +255,12 @@ namespace TimeSheet.Domain
                             }
 
                             Console.WriteLine("Пожалуйста подождите, идет подготовка отчета...");
-                            await Create(date, new DepartmentFileProvider(), new ConsultantWeekendsProvider());
+                            var path = await Create(date, new DepartmentFileProvider(), new ConsultantWeekendsProvider());
+                            if (!string.IsNullOrWhiteSpace(path))
+                            {
+                                FileUtils.LaunchFile(path);
+                            }
+
                             break;
                     }
                     return true;

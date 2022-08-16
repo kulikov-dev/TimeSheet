@@ -8,22 +8,22 @@
         /// <summary>
         /// Department title
         /// </summary>
-        public string? DepartmentTitle { get; set; }
+        public string DepartmentTitle { get; set; } = string.Empty;
 
         /// <summary>
         /// Department leader name
         /// </summary>
-        public string? LeaderName { get; set; }
+        public string LeaderName { get; set; } = string.Empty;
 
         /// <summary>
         /// Department leader position
         /// </summary>
-        public string? LeaderPosition { get; set; }
+        public string LeaderPosition { get; set; } = string.Empty;
 
         /// <summary>
         /// List of employees
         /// </summary>
-        public List<Employee>? Employees { get; set; }
+        public List<Employee> Employees { get; set; } = new();
 
         /// <summary>
         /// Check objects for equals
@@ -42,7 +42,7 @@
                 return true;
             }
 
-            return DepartmentTitle == other.DepartmentTitle && LeaderName == other.LeaderName && LeaderPosition == other.LeaderPosition && Equals(Employees, other.Employees);
+            return DepartmentTitle == other.DepartmentTitle && LeaderName == other.LeaderName && LeaderPosition == other.LeaderPosition && Employees.SequenceEqual(other.Employees);
         }
 
         /// <summary>

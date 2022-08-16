@@ -31,27 +31,27 @@ namespace TimeSheet.Domain
         /// <summary>
         /// Check if a department has employees
         /// </summary>
-        internal bool HasEmployees => _departmentInfo?.Employees?.Count > 0;
+        public bool HasEmployees => _departmentInfo?.Employees?.Count > 0;
 
         /// <summary>
         /// Employees count
         /// </summary>
-        internal int EmployeesCount => _departmentInfo == null ? 0 : _departmentInfo.Employees.Count;
+        public int EmployeesCount => _departmentInfo == null ? 0 : _departmentInfo.Employees.Count;
 
         /// <summary>
         /// Department title
         /// </summary>
-        internal string DepartmentTitle => _departmentInfo?.DepartmentTitle ?? string.Empty;
+        public string DepartmentTitle => _departmentInfo?.DepartmentTitle ?? string.Empty;
 
         /// <summary>
         /// Department leader position
         /// </summary>
-        internal string LeaderPosition => _departmentInfo?.LeaderPosition ?? string.Empty;
+        public string LeaderPosition => _departmentInfo?.LeaderPosition ?? string.Empty;
 
         /// <summary>
         /// Department leader name
         /// </summary>
-        internal string LeaderName => _departmentInfo?.LeaderName ?? string.Empty;
+        public string LeaderName => _departmentInfo?.LeaderName ?? string.Empty;
 
         /// <summary>
         /// Enumerator
@@ -75,7 +75,7 @@ namespace TimeSheet.Domain
         /// Load department info from a provider
         /// </summary>
         /// <returns> Task </returns>
-        internal async Task Load()
+        public async Task Load()
         {
             _departmentInfo = await _provider.Load();
         }
