@@ -66,7 +66,7 @@ namespace TimeSheet.Domain.Providers
                 {
                     new (ShowFilePathCommand, $" * {ShowFilePathCommand}: вывести путь к файлу со списком сотрудников;", 3),
                     new (EditFilePathCommand, $" * {EditFilePathCommand}: изменить путь к файлу со списком сотрудников;", 5),
-                    new(OpenSourceFileCommand, $" * {OpenSourceFileCommand}: открыть файл со списком сотрудников.", 4)
+                    new(OpenSourceFileCommand, $" * {OpenSourceFileCommand}: открыть файл со списком сотрудников;", 4)
                 };
             }
 
